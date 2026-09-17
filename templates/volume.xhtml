@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
+<head>
+    <title>제{{ volume_number }}권</title>
+</head>
+<body>
+    <section class="volume-page">
+        <span class="chapter-num">chapter {{ volume_number_padded }}</span>
+        <h1 class="chapter-title">제{{ volume_number }}권</h1>
+
+        <div class="sub-title-wrap">
+            <p class="sub-orig">{{ volume_original_title }}</p>
+            <p class="sub-trans">{{ volume_korean_title }}</p>
+        </div>
+
+        <div class="line"></div>
+        <div class="decoration">{{ volume_decoration }}</div>
+    </section>
+</body>
+</html>

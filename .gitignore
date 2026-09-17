@@ -1,0 +1,20 @@
+# Python environments and bytecode
+.venv/
+.venv-build/
+__pycache__/
+*.py[cod]
+
+# PyInstaller output
+build/
+dist/
+
+# Local EPUB generation and user settings
+output/
+*.epub
+book.json
+input.txt
+output.txt
+
+# Local editor settings
+.vscode/
+.idea/

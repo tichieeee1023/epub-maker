@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
+<head>
+    <title>책정보</title>
+</head>
+<body>
+    <section class="bookinfo-page">
+        <h1 class="book-title">{{ book_title }}</h1>
+        <p class="original-title">{{ book_original_title }}</p>
+
+        <p class="volume-label">제 {{ volume_number }} 권</p>
+        <p class="english-title">{{ book_english_title }}</p>
+
+        <div class="metadata">
+            <p class="metadata-row">
+                <span class="metadata-label">저자</span>
+                <span class="metadata-divider">|</span>
+                <span>{{ author_korean }}</span>
+            </p>
+            <p class="metadata-row">
+                <span class="metadata-label">연재처</span>
+                <span class="metadata-divider">|</span>
+                <span>{{ serialization_site }}</span>
+            </p>
+        </div>
+
+        <p class="copyright-notice">
+            이 전자책의 무단 전재 및 복제 행위는<br />
+            저작권법에 의해 금지되어 있습니다.
+        </p>
+    </section>
+</body>
+</html>

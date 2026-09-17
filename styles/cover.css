@@ -1,0 +1,22 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.cover-page {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    text-indent: 0;
+}
+
+.cover-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+}
