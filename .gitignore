@@ -18,3 +18,4 @@ output.txt
 # Local editor settings
 .vscode/
 .idea/
+release/
