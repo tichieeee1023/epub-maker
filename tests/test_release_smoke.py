@@ -39,6 +39,7 @@ class EpubRegressionTests(unittest.TestCase):
                 config = default_book_config()
                 config.update({
                     "title": "오벨리스크",
+                    "input_file": "unused.txt",
                     "original_title": "方尖碑",
                     "author_korean": "일십사주",
                     "include_translation_notice": notices_enabled,
