@@ -123,6 +123,8 @@ def config_to_form_values(config):
         values[key] = next(
             label for label, value in options.items() if value == selected_value
         )
+    for key in ("include_translation_notice", "include_reader_notice"):
+        values[key] = bool(normalized[key])
     return values
 
 
@@ -131,6 +133,8 @@ def form_values_to_config(values, base_config):
     config.pop("identifier", None)
     config["input_file"] = values["input_file"].strip()
     config["cover_file"] = values["cover_file"].strip()
+    for key in ("include_translation_notice", "include_reader_notice"):
+        config[key] = bool(values[key])
 
     for path, _label in FIELD_SPECS:
         value = values[path].strip()
@@ -425,7 +429,9 @@ class EpubMakerGUI(ctk.CTk):
 
         initial_values = config_to_form_values(self.base_config)
         self.variables = {
-            key: tk.StringVar(master=self, value=value)
+            key: (tk.BooleanVar(master=self, value=value)
+                  if isinstance(value, bool)
+                  else tk.StringVar(master=self, value=value))
             for key, value in initial_values.items()
         }
         self.status_variable = tk.StringVar(master=self, value="최근 입력값을 불러왔습니다.")
@@ -481,6 +487,7 @@ class EpubMakerGUI(ctk.CTk):
         self._build_fields_card(scroll, 1, "권 정보", VOLUME_FIELDS)
         self._build_files_card(scroll, 2)
         self._build_styles_card(scroll, 3)
+        self._build_notice_card(scroll, 4)
 
         action = ctk.CTkFrame(panel, fg_color="transparent")
         action.grid(row=2, column=0, sticky="ew", padx=22, pady=(12, 20))
@@ -611,6 +618,20 @@ class EpubMakerGUI(ctk.CTk):
                 dropdown_font=ui_font(12),
             ).grid(row=style_row, column=1, sticky="ew", padx=(0, 16), pady=6)
         ctk.CTkLabel(card, text="").grid(row=len(STYLE_SPECS) + 1, column=0, pady=2)
+
+    def _build_notice_card(self, parent, row):
+        card = self._card(parent, row, "안내 페이지")
+        for index, (key, label) in enumerate((
+            ("include_translation_notice", "번역 안내 자동 삽입"),
+            ("include_reader_notice", "이용자 유의사항 자동 삽입"),
+        ), start=1):
+            ctk.CTkCheckBox(
+                card, text=label,
+                variable=self.variables[key],
+                font=ui_font(12),
+                text_color=COLORS["text"],
+            ).grid(row=index, column=0, columnspan=2,
+                   sticky="w", padx=16, pady=8)
 
     def _select_txt(self):
         selected = filedialog.askopenfilename(
