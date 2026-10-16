@@ -61,6 +61,12 @@ def split_chapters(text):
     matches = list(pattern.finditer(text))
     chapters = []
 
+    # 첫 챕터 앞의 원고도 보존한다. 이전 버전은 이 부분을 버렸다.
+    if matches:
+        opening_text = text[:matches[0].start()].strip()
+        if opening_text:
+            chapters.append({"title": "서문", "content": opening_text})
+
     for index, match in enumerate(matches):
         content_start = match.end()
         content_end = (
