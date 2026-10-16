@@ -29,8 +29,6 @@ BOOKINFO_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "bookinfo.xhtml"
 TRANSLATION_NOTICE_FILE = RESOURCE_DIR / "templates" / "translation_notice.xhtml"
 READER_NOTICE_FILE = RESOURCE_DIR / "templates" / "reader_notice.xhtml"
 NOTICE_STYLE_FILE = RESOURCE_DIR / "styles" / "notice.css"
-TRANSLATION_NOTICE_FILE = RESOURCE_DIR / "templates" / "translation_notice.xhtml"
-READER_NOTICE_FILE = RESOURCE_DIR / "templates" / "reader_notice.xhtml"
 
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
@@ -305,23 +303,6 @@ def create_epub(chapters, config, output_epub=None):
     volume_page.content = render_template(VOLUME_TEMPLATE_FILE, config)
     add_stylesheet_link(volume_page)
     book.add_item(volume_page)
-
-    # 독립 XHTML 안내문은 공통 본문 CSS를 적용하지 않아 기존 디자인을 보존한다.
-    notice_pages = []
-    for enabled, filename, page_title, page_name in (
-        (config["include_translation_notice"], TRANSLATION_NOTICE_FILE, "번역 안내", "translation_notice.xhtml"),
-        (config["include_reader_notice"], READER_NOTICE_FILE, "이용자 유의사항", "reader_notice.xhtml"),
-    ):
-        if not enabled:
-            continue
-        notice_page = epub.EpubHtml(
-            title=page_title,
-            file_name=f"Text/{page_name}",
-            lang="ko",
-        )
-        notice_page.content = filename.read_text(encoding="utf-8")
-        book.add_item(notice_page)
-        notice_pages.append(notice_page)
 
     notice_pages = []
     if config.get("include_translation_notice", True) or config.get("include_reader_notice", True):
