@@ -250,84 +250,66 @@ class ReaderPreview(ctk.CTkFrame):
         )
 
     def _draw_title_page(self, left, top, width, height):
+        # GUI Canvas 미리보기: XHTML/CSS의 editorial 레이아웃을 간략히 모사한다.
         values = self.preview_values
         center_x = left + width / 2
         scale = max(0.78, min(1.0, height / 460))
+        english_title = values["english_title"].strip()
+        work_title = values["title"].strip() or "작품명"
         original_title = values["original_title"].strip() or "원제"
         korean_title = values["korean_title"].strip()
-        work_title = values["title"].strip() or "작품명"
-        english_title = values["english_title"].strip()
         volume = values["volume.number"].strip() or "1"
         author = values["author_korean"].strip() or "작가명"
 
-        y = top + height * 0.19
+        y = top + 64 * scale
+        if english_title:
+            self.canvas.create_text(
+                center_x, y, text=english_title.upper(), width=width * 0.86,
+                fill="#888888", font=(FONT_FAMILY, round(10 * scale)),
+                justify="center",
+            )
+            y += 43 * scale
+
         self.canvas.create_text(
-            center_x,
-            y,
-            text=original_title,
-            width=width * 0.82,
-            fill="#4A4A4A",
-            font=(FONT_FAMILY, round(16 * scale)),
+            center_x, y, text=work_title, width=width * 0.86,
+            fill="#191919", font=(FONT_FAMILY, round(23 * scale), "bold"),
+            justify="center",
+        )
+        y += 44 * scale
+        self.canvas.create_text(
+            center_x, y, text=original_title, width=width * 0.85,
+            fill="#555555", font=(FONT_FAMILY, round(13 * scale)),
             justify="center",
         )
         if korean_title:
-            y += 29 * scale
+            y += 26 * scale
             self.canvas.create_text(
-                center_x,
-                y,
-                text=korean_title,
-                width=width * 0.82,
-                fill="#777777",
-                font=(FONT_FAMILY, round(12 * scale)),
+                center_x, y, text=korean_title, width=width * 0.82,
+                fill="#999999", font=(FONT_FAMILY, round(10 * scale)),
                 justify="center",
             )
 
-        y += 48 * scale
+        y += 46 * scale
         self.canvas.create_line(
-            center_x - 24 * scale,
-            y,
-            center_x + 24 * scale,
-            y,
-            fill="#AAAAAA",
+            center_x - 17 * scale, y, center_x + 17 * scale, y,
+            fill="#777777",
         )
-        y += 48 * scale
-        self.canvas.create_text(
-            center_x,
-            y,
-            text=work_title,
-            width=width * 0.84,
-            fill="#222222",
-            font=(FONT_FAMILY, round(23 * scale), "bold"),
-            justify="center",
+        y += 55 * scale
+        badge_width = 62 * scale
+        badge_height = 36 * scale
+        self.canvas.create_rectangle(
+            center_x - badge_width / 2, y - badge_height / 2,
+            center_x + badge_width / 2, y + badge_height / 2,
+            outline="#666666", width=1,
         )
-        if english_title:
-            y += 34 * scale
-            self.canvas.create_text(
-                center_x,
-                y,
-                text=english_title,
-                width=width * 0.82,
-                fill="#777777",
-                font=(FONT_FAMILY, round(10 * scale)),
-                justify="center",
-            )
-
-        y += 58 * scale
         self.canvas.create_text(
-            center_x,
-            y,
-            text=f"{volume}권",
-            fill="#222222",
-            font=(FONT_FAMILY, round(15 * scale), "bold"),
+            center_x, y, text=f"{volume}권",
+            fill="#222222", font=(FONT_FAMILY, round(14 * scale), "bold"),
         )
-        y += 52 * scale
+        y += 95 * scale
         self.canvas.create_text(
-            center_x,
-            y,
-            text=author,
-            width=width * 0.82,
-            fill="#555555",
-            font=(FONT_FAMILY, round(12 * scale)),
+            center_x, y, text=author, width=width * 0.82,
+            fill="#333333", font=(FONT_FAMILY, round(12 * scale)),
             justify="center",
         )
 
