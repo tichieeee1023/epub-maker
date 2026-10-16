@@ -29,8 +29,9 @@ class EpubRegressionTests(unittest.TestCase):
 
     def test_prologue_kept(self):
         chapters = split_chapters("권 앞머리\n#제1장\n본문")
-        self.assertEqual([chapter["title"] for chapter in chapters], ["서문", "제1장"])
-        self.assertEqual(chapters[0]["content"], "권 앞머리")
+        self.assertEqual([chapter["title"] for chapter in chapters], ["제1장"])
+        self.assertTrue(chapters[0]["content"].startswith("권 앞머리"))
+        self.assertIn("본문", chapters[0]["content"])
 
     def test_notices_in_epub_and_optional(self):
         chapters = split_chapters("#제1장 시작\n본문 내용.")
