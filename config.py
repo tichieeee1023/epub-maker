@@ -38,6 +38,8 @@ DEFAULT_CONFIG = {
     "cover_file": "",
     "include_translation_notice": True,
     "include_reader_notice": True,
+    "include_translation_notice": True,
+    "include_reader_notice": True,
     "chapter_header_style": DEFAULT_CHAPTER_HEADER_STYLE,
     "scene_break_style": DEFAULT_SCENE_BREAK_STYLE,
     "section_divider_style": DEFAULT_SECTION_DIVIDER_STYLE,
@@ -122,6 +124,9 @@ def normalize_book_config(config):
     for key in ("include_translation_notice", "include_reader_notice"):
         if not isinstance(normalized[key], bool):
             raise ValueError("안내 페이지 설정은 참/거짓 값이어야 합니다.")
+    for key in ("include_translation_notice", "include_reader_notice"):
+        if not isinstance(normalized[key], bool):
+            raise ValueError("안내 페이지 설정은 참/거짓이어야 합니다.")
     return normalized
 
 
