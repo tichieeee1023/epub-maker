@@ -1,0 +1,152 @@
+/*
+ * 번역 안내 / 이용자 유의사항 전용 CSS
+ *
+ * [안내 페이지 공통 변수] 아래 값을 수정하면 두 안내문에 동시에 적용된다.
+ * CSS 사용자 정의 속성을 지원하지 않는 구형 EPUB 리더를 위해 각 규칙의
+ * 첫 번째 선언은 정적 기본값으로 유지한다.
+ *
+ * 색상은 기기의 밝기/다크모드를 존중하도록 기본적으로 inherit/currentColor.
+ */
+:root {
+    --notice-width: 34em;
+    --notice-text-size: 0.94em;
+    --notice-line-height: 1.75;
+    --notice-heading-size: 1.4em;
+    --notice-item-gap: 1.65em;
+    --notice-muted-opacity: 0.65;
+    --notice-rule-opacity: 0.35;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+}
+
+.reader-notice {
+    width: auto;
+    max-width: 34em;
+    max-width: var(--notice-width, 34em);
+    margin: 0 auto;
+    padding: 2.2em 0.65em 2em;
+    color: inherit;
+    background: transparent;
+    line-height: 1.75;
+    line-height: var(--notice-line-height, 1.75);
+    text-indent: 0;
+    word-break: keep-all;
+}
+
+.reader-notice p,
+.reader-notice h1,
+.reader-notice h2 {
+    text-indent: 0;
+}
+
+.notice-header {
+    margin: 0 0 2.3em;
+    text-align: center;
+}
+
+.notice-eyebrow {
+    margin: 0 0 0.8em;
+    font-size: 0.78em;
+    letter-spacing: 0.16em;
+    opacity: 0.65;
+    opacity: var(--notice-muted-opacity, 0.65);
+    line-height: 1.5;
+    text-align: center;
+}
+
+.notice-title {
+    margin: 0;
+    color: inherit;
+    font-size: 1.4em;
+    font-size: var(--notice-heading-size, 1.4em);
+    line-height: 1.45;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.notice-rule {
+    width: 2.5em;
+    height: 0;
+    margin: 1.6em auto 0;
+    padding: 0;
+    border-top: 1px solid currentColor;
+    opacity: 0.35;
+    opacity: var(--notice-rule-opacity, 0.35);
+}
+
+.notice-list {
+    margin: 0;
+    padding: 0;
+}
+
+.notice-item {
+    margin: 0 0 1.65em;
+    margin-bottom: var(--notice-item-gap, 1.65em);
+    padding: 0;
+    break-inside: avoid;
+}
+
+.notice-item-head {
+    margin: 0 0 0.45em;
+    font-weight: bold;
+    font-size: 0.98em;
+    line-height: 1.5;
+    color: inherit;
+}
+
+.notice-num {
+    display: inline-block;
+    min-width: 2em;
+    font-size: 0.88em;
+    opacity: 0.65;
+    opacity: var(--notice-muted-opacity, 0.65);
+}
+
+.notice-copy {
+    margin: 0;
+    padding: 0 0 0 2em;
+    color: inherit;
+    font-size: 0.94em;
+    font-size: var(--notice-text-size, 0.94em);
+    line-height: 1.75;
+    line-height: var(--notice-line-height, 1.75);
+}
+
+.notice-copy + .notice-copy {
+    margin-top: 0.6em;
+}
+
+.notice-aside,
+.notice-foot {
+    margin: 2.4em 0 0;
+    padding: 1.25em 0 0;
+    border-top: 1px solid currentColor;
+}
+
+.notice-aside-title {
+    margin: 0 0 1em;
+    color: inherit;
+    font-size: 0.88em;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+.notice-aside p {
+    margin: 0 0 1em;
+    color: inherit;
+    font-size: 0.9em;
+    line-height: 1.75;
+    line-height: var(--notice-line-height, 1.75);
+}
+
+.notice-foot {
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.8;
+}
