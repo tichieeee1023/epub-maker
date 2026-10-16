@@ -1,0 +1,62 @@
+name: Build EPUB Maker for Windows
+
+on:
+  push:
+    branches:
+      - fix/chapter-colons-and-notice-pages
+    paths:
+      - ".github/workflows/windows-release.yml"
+      - "builder.py"
+      - "config.py"
+      - "gui.py"
+      - "templates/**"
+      - "styles/**"
+      - "tests/**"
+      - "epub_maker.spec"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+      - name: Install requirements
+        run: python -m pip install -r requirements-build.txt
+      - name: Check Python syntax
+        run: python -m compileall -q builder.py config.py gui.py main.py tests
+      - name: EPUB regression smoke tests
+        run: python -m unittest discover -s tests -v
+      - name: Build Windows EXE
+        run: pyinstaller --noconfirm --clean epub_maker.spec
+      - name: Verify executable and assemble ZIP
+        shell: pwsh
+        run: |
+          $exe = "dist/EPUB Maker.exe"
+          if (-not (Test-Path $exe)) { throw "EPUB Maker.exe missing" }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $exe))
+          if ($bytes.Length -lt 4000000) { throw "EXE too small" }
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "Not a Windows PE file" }
+          New-Item -ItemType Directory -Force release | Out-Null
+          Compress-Archive -Path $exe -DestinationPath "release/EPUB-Maker-1.1.0.zip" -Force
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EPUB-Maker-1.1.0-Windows
+          path: release/EPUB-Maker-1.1.0.zip
+          if-no-files-found: error
+      - name: Publish v1.1.0 release
+        if: github.ref == 'refs/heads/fix/chapter-colons-and-notice-pages'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.1.0 "release/EPUB-Maker-1.1.0.zip" --title "EPUB Maker 1.1.0" --target "$env:GITHUB_SHA" --notes "챕터 제목 콜론 인식, 번역 안내/이용자 유의사항 자동 삽입 및 외부 CSS 설정, 만유인력형 작품/권수 타이틀 디자인. Windows x64용 ZIP 안의 EPUB Maker.exe를 실행하세요. 리디 실기기 디자인은 추가 확인이 필요합니다."

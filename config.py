@@ -36,6 +36,8 @@ VOLUME_DECORATIONS = {
 DEFAULT_CONFIG = {
     "input_file": "",
     "cover_file": "",
+    "include_translation_notice": True,
+    "include_reader_notice": True,
     "chapter_header_style": DEFAULT_CHAPTER_HEADER_STYLE,
     "scene_break_style": DEFAULT_SCENE_BREAK_STYLE,
     "section_divider_style": DEFAULT_SECTION_DIVIDER_STYLE,
@@ -117,6 +119,9 @@ def normalize_book_config(config):
         raise ValueError("구분선 스타일을 목록에서 선택해주세요.")
     if normalized["volume_decoration_style"] not in VOLUME_DECORATIONS:
         raise ValueError("권 시작 장식을 목록에서 선택해주세요.")
+    for key in ("include_translation_notice", "include_reader_notice"):
+        if not isinstance(normalized[key], bool):
+            raise ValueError("안내 페이지 설정은 참/거짓이어야 합니다.")
     return normalized
 
 
