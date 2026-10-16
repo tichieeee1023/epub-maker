@@ -26,6 +26,8 @@ COVER_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "cover.xhtml"
 TITLE_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "title.xhtml"
 VOLUME_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "volume.xhtml"
 BOOKINFO_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "bookinfo.xhtml"
+TRANSLATION_NOTICE_FILE = RESOURCE_DIR / "templates" / "translation_notice.xhtml"
+READER_NOTICE_FILE = RESOURCE_DIR / "templates" / "reader_notice.xhtml"
 
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
@@ -50,7 +52,7 @@ def preprocess_text(text):
 def split_chapters(text):
     """#제1장 또는 #제1장 소제목 형식만 실제 챕터로 인식한다."""
     pattern = re.compile(
-        r"^#\s*(제\d+(?:장|화)(?:[ \t]+[^\r\n]+)?)\s*$",
+        r"^#[ \t]*(제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?)\s*$",
         re.MULTILINE,
     )
     matches = list(pattern.finditer(text))
@@ -107,10 +109,10 @@ def text_to_html(
 
 
 def split_chapter_display_title(title):
-    match = re.fullmatch(r"(제\d+(?:장|화))(?:[ \t]+(.+))?", title)
+    match = re.fullmatch(r"(제\d+(?:장|화))(?:[ \t]*[:：][ \t]*(.+)|[ \t]+(.+))?", title)
     if not match:
         return title, ""
-    return match.group(1), (match.group(2) or "").strip()
+    return match.group(1), (match.group(2) or match.group(3) or "").strip()
 
 
 def render_chapter_header(title, chapter_header_style):
@@ -295,6 +297,23 @@ def create_epub(chapters, config, output_epub=None):
     add_stylesheet_link(volume_page)
     book.add_item(volume_page)
 
+    # 독립 XHTML 안내문은 공통 본문 CSS를 적용하지 않아 기존 디자인을 보존한다.
+    notice_pages = []
+    for enabled, filename, page_title, page_name in (
+        (config["include_translation_notice"], TRANSLATION_NOTICE_FILE, "번역 안내", "translation_notice.xhtml"),
+        (config["include_reader_notice"], READER_NOTICE_FILE, "이용자 유의사항", "reader_notice.xhtml"),
+    ):
+        if not enabled:
+            continue
+        notice_page = epub.EpubHtml(
+            title=page_title,
+            file_name=f"Text/{page_name}",
+            lang="ko",
+        )
+        notice_page.content = filename.read_text(encoding="utf-8")
+        book.add_item(notice_page)
+        notice_pages.append(notice_page)
+
     epub_chapters = []
     for index, chapter_data in enumerate(chapters, start=1):
         title = chapter_data["title"]
@@ -329,14 +348,14 @@ def create_epub(chapters, config, output_epub=None):
     add_stylesheet_link(bookinfo_page)
     book.add_item(bookinfo_page)
 
-    book.toc = tuple(epub_chapters + [bookinfo_page])
+    book.toc = tuple(notice_pages + epub_chapters + [bookinfo_page])
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
 
     front_matter = [title_page, volume_page]
     if cover_page is not None:
         front_matter.insert(0, cover_page)
-    book.spine = front_matter + epub_chapters + [bookinfo_page]
+    book.spine = front_matter + notice_pages + epub_chapters + [bookinfo_page]
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     epub.write_epub(str(output_path), book, {})
