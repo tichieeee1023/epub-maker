@@ -408,3 +408,114 @@ p {
     line-height: 1.8;
     letter-spacing: -0.02em;
 }
+
+
+/* ==========================================
+   만유인력 스타일: 작품/권수 타이틀 페이지
+   기존 .title-page 스타일은 보존하고 editorial형만 덮어쓴다.
+   리디의 CSS 변수 호환성 문제를 피하기 위해 정적 값 사용.
+   ========================================== */
+.title-page--editorial {
+    margin: 0;
+    padding: 5.5em 1.2em 2em;
+    color: #222;
+    text-align: center;
+    text-indent: 0;
+    font-family: "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+.title-page--editorial .title-eyebrow {
+    margin: 0 0 1.65em;
+    padding: 0;
+    color: #888;
+    font-size: 0.8em;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    text-indent: 0;
+}
+
+.title-page--editorial .work-title {
+    margin: 0;
+    padding: 0;
+    color: #191919;
+    font-family: "Pretendard", "Noto Sans KR", sans-serif;
+    font-size: 2.05em;
+    font-weight: 700;
+    line-height: 1.45;
+    letter-spacing: -0.025em;
+    text-align: center;
+    text-indent: 0;
+    word-break: keep-all;
+}
+
+.title-page--editorial .original-title {
+    margin: 0.65em 0 0;
+    color: #555;
+    font-size: 1.08em;
+    font-weight: 400;
+    line-height: 1.55;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-indent: 0;
+}
+
+.title-page--editorial .korean-title {
+    margin: 0.35em 0 0;
+    color: #999;
+    font-size: 0.77em;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-indent: 0;
+}
+
+/* 권수 위 짧은 선 */
+.title-page--editorial .title-rule {
+    width: 2em;
+    height: 0;
+    margin: 3em auto 3.3em;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid #777;
+}
+
+.title-page--editorial .volume-wrapper {
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    text-indent: 0;
+    text-align: center;
+}
+
+.title-page--editorial .volume-label {
+    display: inline-block;
+    margin: 0;
+    padding: 0.35em 0.85em;
+    color: #222;
+    border: 1px solid #666;
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0;
+}
+
+.title-page--editorial .author {
+    margin: 6.7em 0 0;
+    padding: 0;
+    color: #333;
+    font-size: 0.95em;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.2em;
+    text-align: center;
+    text-indent: 0;
+}
+
+.title-page--editorial .title-eyebrow:empty,
+.title-page--editorial .korean-title:empty,
+.title-page--editorial .original-title:empty {
+    display: none;
+}
