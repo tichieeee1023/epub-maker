@@ -73,7 +73,7 @@ def split_chapters(text):
             {
                 "title": match.group(1).strip(),
                 "content": (
-                    (opening_text + "\\n\\n" if index == 0 and opening_text else "")
+                    (opening_text + "\n\n" if index == 0 and opening_text else "")
                     + text[content_start:content_end].strip()
                 ),
             }
