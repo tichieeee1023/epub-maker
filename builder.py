@@ -28,6 +28,9 @@ VOLUME_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "volume.xhtml"
 BOOKINFO_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "bookinfo.xhtml"
 TRANSLATION_NOTICE_FILE = RESOURCE_DIR / "templates" / "translation_notice.xhtml"
 READER_NOTICE_FILE = RESOURCE_DIR / "templates" / "reader_notice.xhtml"
+NOTICE_STYLE_FILE = RESOURCE_DIR / "styles" / "notice.css"
+TRANSLATION_NOTICE_FILE = RESOURCE_DIR / "templates" / "translation_notice.xhtml"
+READER_NOTICE_FILE = RESOURCE_DIR / "templates" / "reader_notice.xhtml"
 
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
@@ -313,6 +316,31 @@ def create_epub(chapters, config, output_epub=None):
         notice_page.content = filename.read_text(encoding="utf-8")
         book.add_item(notice_page)
         notice_pages.append(notice_page)
+
+    notice_pages = []
+    if config.get("include_translation_notice", True) or config.get("include_reader_notice", True):
+        notice_style = epub.EpubItem(
+            uid="style_notice",
+            file_name="Styles/notice.css",
+            media_type="text/css",
+            content=NOTICE_STYLE_FILE.read_text(encoding="utf-8"),
+        )
+        book.add_item(notice_style)
+        for enabled, template_file, page_title, page_name in (
+            (config.get("include_translation_notice", True), TRANSLATION_NOTICE_FILE, "번역 안내", "translation_notice.xhtml"),
+            (config.get("include_reader_notice", True), READER_NOTICE_FILE, "이용자 유의사항", "reader_notice.xhtml"),
+        ):
+            if not enabled:
+                continue
+            notice_page = epub.EpubHtml(
+                title=page_title,
+                file_name=f"Text/{page_name}",
+                lang="ko",
+            )
+            notice_page.content = template_file.read_text(encoding="utf-8")
+            notice_page.add_link(href="../Styles/notice.css", rel="stylesheet", type="text/css")
+            book.add_item(notice_page)
+            notice_pages.append(notice_page)
 
     epub_chapters = []
     for index, chapter_data in enumerate(chapters, start=1):
