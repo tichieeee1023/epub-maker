@@ -34,7 +34,7 @@ SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
 BLANK_SCENE_BREAK_MARKER = "__EPUB_MAKER_BLANK_SCENE_BREAK__"
 CHAPTER_HEADING_LINE = re.compile(
-    r"^#[ \\t]*제\\d+(?:장|화)(?:[ \\t]*[:：][ \\t]*[^\\r\\n]+|[ \\t]+[^\\r\\n]+)?[ \\t]*$"
+    r"^#[ \t]*제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?[ \t]*$"
 )
 
 
