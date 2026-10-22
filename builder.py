@@ -33,6 +33,7 @@ NOTICE_STYLE_FILE = RESOURCE_DIR / "styles" / "notice.css"
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
 BLANK_SCENE_BREAK_MARKER = "__EPUB_MAKER_BLANK_SCENE_BREAK__"
+SOURCE_DOT_BREAK_RE = re.compile(r"[·•∙](?:[ \\t]*[·•∙]){0,9}")
 CHAPTER_HEADING_LINE = re.compile(
     r"^#[ \t]*제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?[ \t]*$"
 )
@@ -154,6 +155,10 @@ def text_to_html(
                     html_parts.append(
                         f'<p class="scene-break scene-break--{style}">{marker}</p>'
                     )
+        elif SOURCE_DOT_BREAK_RE.fullmatch(line):
+            html_parts.append(
+                f'<p class="scene-break scene-break--source-dots">{escape(line)}</p>'
+            )
         elif line in SCENE_BREAK_MARKERS:
             style = triple_star_style if line == "***" and triple_star_style != "same" else scene_break_style
             if style == "short-line":
@@ -221,7 +226,7 @@ def count_postprocess_targets(chapters):
     for chapter in chapters:
         for raw_line in chapter["content"].splitlines():
             line = raw_line.strip()
-            if line in SCENE_BREAK_MARKERS:
+            if line in SCENE_BREAK_MARKERS or SOURCE_DOT_BREAK_RE.fullmatch(line):
                 scene_breaks += 1
             elif line == SECTION_DIVIDER_MARKER:
                 section_dividers += 1
