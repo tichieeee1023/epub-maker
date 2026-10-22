@@ -33,7 +33,7 @@ NOTICE_STYLE_FILE = RESOURCE_DIR / "styles" / "notice.css"
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
 BLANK_SCENE_BREAK_MARKER = "__EPUB_MAKER_BLANK_SCENE_BREAK__"
-SOURCE_DOT_BREAK_RE = re.compile(r"[·•∙](?:[ \\t]*[·•∙]){0,9}")
+SOURCE_DOT_BREAK_RE = re.compile(r"[·•∙](?:[ \t]*[·•∙]){0,9}")
 CHAPTER_HEADING_LINE = re.compile(
     r"^#[ \t]*제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?[ \t]*$"
 )
