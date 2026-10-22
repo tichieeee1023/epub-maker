@@ -12,6 +12,12 @@ BOOK_CONFIG_FILE = APP_DIR / "book.json"
 
 DEFAULT_CHAPTER_HEADER_STYLE = "simple"
 DEFAULT_SCENE_BREAK_STYLE = "dots"
+DEFAULT_TRIPLE_STAR_STYLE = "same"
+DEFAULT_BLANK_BREAK_DETECTION = "off"
+DEFAULT_BLANK_BREAK_STYLE = "space"
+TRIPLE_STAR_STYLES = {"same", "dots", "bullet", "short-line", "none", "leaf"}
+BLANK_BREAK_DETECTIONS = {"off", "1", "2", "3"}
+BLANK_BREAK_STYLES = {"space", "dots", "bullet", "short-line", "leaf"}
 DEFAULT_SECTION_DIVIDER_STYLE = "short-line"
 DEFAULT_VOLUME_DECORATION_STYLE = "leaf"
 CHAPTER_HEADER_STYLES = {"simple", "spaced", "subtitle", "inline"}
@@ -40,6 +46,9 @@ DEFAULT_CONFIG = {
     "include_reader_notice": True,
     "chapter_header_style": DEFAULT_CHAPTER_HEADER_STYLE,
     "scene_break_style": DEFAULT_SCENE_BREAK_STYLE,
+    "triple_star_style": DEFAULT_TRIPLE_STAR_STYLE,
+    "blank_break_detection": DEFAULT_BLANK_BREAK_DETECTION,
+    "blank_break_style": DEFAULT_BLANK_BREAK_STYLE,
     "section_divider_style": DEFAULT_SECTION_DIVIDER_STYLE,
     "volume_decoration_style": DEFAULT_VOLUME_DECORATION_STYLE,
     "title": "",
@@ -115,6 +124,12 @@ def normalize_book_config(config):
         raise ValueError("챕터 헤더 스타일을 목록에서 선택해주세요.")
     if normalized["scene_break_style"] not in SCENE_BREAK_STYLES:
         raise ValueError("장면 전환 스타일을 목록에서 선택해주세요.")
+    if normalized["triple_star_style"] not in TRIPLE_STAR_STYLES:
+        raise ValueError("*** 전환 스타일을 목록에서 선택해주세요.")
+    if normalized["blank_break_detection"] not in BLANK_BREAK_DETECTIONS:
+        raise ValueError("빈 줄 감지 기준을 목록에서 선택해주세요.")
+    if normalized["blank_break_style"] not in BLANK_BREAK_STYLES:
+        raise ValueError("빈 줄 전환 스타일을 목록에서 선택해주세요.")
     if normalized["section_divider_style"] not in SECTION_DIVIDER_STYLES:
         raise ValueError("구분선 스타일을 목록에서 선택해주세요.")
     if normalized["volume_decoration_style"] not in VOLUME_DECORATIONS:
