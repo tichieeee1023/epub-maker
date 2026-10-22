@@ -50,6 +50,39 @@ STYLE_SPECS = (
         },
     ),
     (
+        "triple_star_style",
+        "*** 전환",
+        {
+            "*와 동일": "same",
+            "· · · 작은 점": "dots",
+            "• 한 점": "bullet",
+            "짧은 실선": "short-line",
+            "❧ 잎 장식": "leaf",
+            "장식 없음": "none",
+        },
+    ),
+    (
+        "blank_break_detection",
+        "빈 줄 감지",
+        {
+            "인식 안 함": "off",
+            "빈 줄 1개 이상 (주의)": "1",
+            "빈 줄 2개 이상": "2",
+            "빈 줄 3개 이상": "3",
+        },
+    ),
+    (
+        "blank_break_style",
+        "빈 줄 표시",
+        {
+            "여백만": "space",
+            "· · · 작은 점": "dots",
+            "• 한 점": "bullet",
+            "짧은 실선": "short-line",
+            "❧ 잎 장식": "leaf",
+        },
+    ),
+    (
         "section_divider_style",
         "구분선",
         {
@@ -737,7 +770,8 @@ class EpubMakerGUI(ctk.CTk):
             "EPUB 생성 완료\n\n"
             f"챕터 {len(result['chapters'])}개 · "
             f"장면 전환 {result['scene_breaks']}개 · "
-            f"구분선 {result['section_dividers']}개\n\n"
+            f"구분선 {result['section_dividers']}개 · "
+            f"공백 전환 {result['blank_breaks']}개\n\n"
             f"{output_path}"
         )
         self.status_variable.set(f"완료: {output_path.name}")
