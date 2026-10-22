@@ -298,6 +298,13 @@ p {
     color: #777;
 }
 
+/* 원문 점 장식은 다른 기호로 바꾸지 않고 가운데 정렬 */
+.scene-break--source-dots {
+    font-size: 0.83em;
+    letter-spacing: 0.14em;
+    color: #777;
+}
+
 .section-divider {
     margin: 1.8em auto;
     border: 0;
