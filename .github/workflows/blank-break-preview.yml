@@ -1,0 +1,39 @@
+name: Test blank-line scene break improvements
+
+on:
+  push:
+    branches:
+      - feature/blank-scene-breaks
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-preview:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+      - name: Install dependencies
+        run: python -m pip install -r requirements-build.txt
+      - name: Syntax check
+        run: python -m compileall -q builder.py config.py gui.py main.py tests
+      - name: Regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Build preview EXE
+        run: pyinstaller --noconfirm --clean epub_maker.spec
+      - name: Zip preview
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/EPUB Maker.exe")) { throw "Build failed" }
+          Compress-Archive -Path "dist/EPUB Maker.exe" -DestinationPath "EPUB-Maker-blank-preview.zip" -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EPUB-Maker-blank-scene-preview
+          path: EPUB-Maker-blank-preview.zip
+          if-no-files-found: error
