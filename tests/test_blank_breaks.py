@@ -90,7 +90,7 @@ class BlankBreakTests(unittest.TestCase):
                 chapter = archive.read("EPUB/Text/chapter_001.xhtml").decode("utf-8")
                 self.assertIn("scene-break--blank-space", chapter)
                 self.assertNotIn(BLANK_SCENE_BREAK_MARKER, chapter)
-                self.assertIn('Styles/style.css', archive.namelist()[-1] if False else archive.read("EPUB/content.opf").decode("utf-8"))
+                self.assertIn("Styles/style.css", archive.read("EPUB/content.opf").decode("utf-8"))
             self.assertIn("[공백 장면전환]", (root / "output.txt").read_text(encoding="utf-8"))
 
 
