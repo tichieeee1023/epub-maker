@@ -280,6 +280,31 @@ p {
     color: transparent;
 }
 
+/* 선택적으로 원고의 연속 빈 줄을 장면전환 여백으로 보존 */
+.scene-break--blank-space {
+    margin: 0;
+    padding: 2em 0;
+    color: transparent;
+    font-size: 0.8em;
+    line-height: 1;
+    text-indent: 0;
+    text-align: center;
+}
+
+/* * · *** · 빈 줄에 선택 가능한 본문용 딩벳 */
+.scene-break--leaf {
+    font-size: 1em;
+    letter-spacing: 0;
+    color: #777;
+}
+
+/* 원문 점 장식은 다른 기호로 바꾸지 않고 가운데 정렬 */
+.scene-break--source-dots {
+    font-size: 0.83em;
+    letter-spacing: 0.14em;
+    color: #777;
+}
+
 .section-divider {
     margin: 1.8em auto;
     border: 0;

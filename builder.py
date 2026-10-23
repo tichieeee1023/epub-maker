@@ -32,6 +32,51 @@ NOTICE_STYLE_FILE = RESOURCE_DIR / "styles" / "notice.css"
 
 SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
+BLANK_SCENE_BREAK_MARKER = "__EPUB_MAKER_BLANK_SCENE_BREAK__"
+SOURCE_DOT_BREAK_RE = re.compile(r"[·•∙](?:[ \t]*[·•∙]){0,9}")
+CHAPTER_HEADING_LINE = re.compile(
+    r"^#[ \t]*제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?[ \t]*$"
+)
+
+
+def mark_blank_scene_breaks(text, detection="off"):
+    """Protect intentional blank-line runs BEFORE dialogue cleanup collapses them.
+
+    detection is the number of *empty lines*, not newline characters.
+    The default 'off' preserves existing behavior. One empty line is
+    ambiguous with normal paragraph spacing and must be explicitly enabled.
+    """
+    if detection == "off":
+        return text
+
+    threshold = int(detection)
+    lines = text.splitlines()
+    result = []
+    i = 0
+    while i < len(lines):
+        if lines[i].strip():
+            result.append(lines[i])
+            i += 1
+            continue
+        start = i
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        count = i - start
+        before = lines[start - 1].strip() if start else ""
+        after = lines[i].strip() if i < len(lines) else ""
+        special = SCENE_BREAK_MARKERS | {SECTION_DIVIDER_MARKER, BLANK_SCENE_BREAK_MARKER}
+        if (
+            count >= threshold
+            and before and after
+            and not CHAPTER_HEADING_LINE.fullmatch(before)
+            and not CHAPTER_HEADING_LINE.fullmatch(after)
+            and before not in special and after not in special
+        ):
+            result.append(BLANK_SCENE_BREAK_MARKER)
+        else:
+            result.extend(lines[start:i])
+    return "\n".join(result)
+
 
 
 def preprocess_text(text):
@@ -86,6 +131,8 @@ def text_to_html(
     content,
     scene_break_style=DEFAULT_SCENE_BREAK_STYLE,
     section_divider_style=DEFAULT_SECTION_DIVIDER_STYLE,
+    triple_star_style="same",
+    blank_break_style="space",
 ):
     html_parts = []
 
@@ -93,16 +140,36 @@ def text_to_html(
         line = raw_line.strip()
         if not line:
             continue
-        if line in SCENE_BREAK_MARKERS:
-            if scene_break_style == "short-line":
+        if line == BLANK_SCENE_BREAK_MARKER:
+            if blank_break_style == "space":
+                html_parts.append('<p class="scene-break scene-break--blank-space">&#160;</p>')
+            else:
+                style = blank_break_style
+                if style == "short-line":
+                    html_parts.append(
+                        '<p class="scene-break scene-break--short-line">'
+                        '<span aria-hidden="true"></span></p>'
+                    )
+                else:
+                    marker = "❧" if style == "leaf" else SCENE_BREAK_STYLES[style]
+                    html_parts.append(
+                        f'<p class="scene-break scene-break--{style}">{marker}</p>'
+                    )
+        elif SOURCE_DOT_BREAK_RE.fullmatch(line):
+            html_parts.append(
+                f'<p class="scene-break scene-break--source-dots">{escape(line)}</p>'
+            )
+        elif line in SCENE_BREAK_MARKERS:
+            style = triple_star_style if line == "***" and triple_star_style != "same" else scene_break_style
+            if style == "short-line":
                 html_parts.append(
                     '<p class="scene-break scene-break--short-line">'
                     '<span aria-hidden="true"></span></p>'
                 )
             else:
-                marker = SCENE_BREAK_STYLES[scene_break_style]
+                marker = "❧" if style == "leaf" else SCENE_BREAK_STYLES[style]
                 html_parts.append(
-                    f'<p class="scene-break scene-break--{scene_break_style}">{marker}</p>'
+                    f'<p class="scene-break scene-break--{style}">{marker}</p>'
                 )
         elif line == SECTION_DIVIDER_MARKER:
             html_parts.append(
@@ -159,7 +226,7 @@ def count_postprocess_targets(chapters):
     for chapter in chapters:
         for raw_line in chapter["content"].splitlines():
             line = raw_line.strip()
-            if line in SCENE_BREAK_MARKERS:
+            if line in SCENE_BREAK_MARKERS or SOURCE_DOT_BREAK_RE.fullmatch(line):
                 scene_breaks += 1
             elif line == SECTION_DIVIDER_MARKER:
                 section_dividers += 1
@@ -346,6 +413,8 @@ def create_epub(chapters, config, output_epub=None):
                 chapter_data["content"],
                 config["scene_break_style"],
                 config["section_divider_style"],
+                config["triple_star_style"],
+                config["blank_break_style"],
             )}
         </body>
         </html>
@@ -386,13 +455,14 @@ def generate_from_config(config):
         raise ValueError("TXT 파일을 선택해주세요.")
 
     text = input_path.read_text(encoding="utf-8")
+    text = mark_blank_scene_breaks(text, config["blank_break_detection"])
     processed_text = preprocess_text(text)
     chapters = split_chapters(processed_text)
     if not chapters:
         raise ValueError("챕터를 찾지 못했습니다. #제1장 형식인지 확인해주세요.")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_TXT.write_text(processed_text, encoding="utf-8")
+    OUTPUT_TXT.write_text(processed_text.replace(BLANK_SCENE_BREAK_MARKER, "[공백 장면전환]"), encoding="utf-8")
     output_epub = input_path.with_suffix(".epub")
     create_epub(chapters, config, output_epub)
 
@@ -401,5 +471,6 @@ def generate_from_config(config):
         "chapters": chapters,
         "scene_breaks": scene_breaks,
         "section_dividers": section_dividers,
+        "blank_breaks": sum(c["content"].splitlines().count(BLANK_SCENE_BREAK_MARKER) for c in chapters),
         "output_epub": output_epub,
     }
