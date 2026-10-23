@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows-preview:
@@ -31,9 +31,16 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Test-Path "dist/EPUB Maker.exe")) { throw "Build failed" }
-          Compress-Archive -Path "dist/EPUB Maker.exe" -DestinationPath "EPUB-Maker-blank-preview.zip" -Force
+          Compress-Archive -Path "dist/EPUB Maker.exe" -DestinationPath "EPUB-Maker-1.2.0.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: EPUB-Maker-blank-scene-preview
-          path: EPUB-Maker-blank-preview.zip
+          name: EPUB-Maker-1.2.0-Windows
+          path: EPUB-Maker-1.2.0.zip
           if-no-files-found: error
+
+      - name: Publish v1.2.0 release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.2.0 "EPUB-Maker-1.2.0.zip" --target "$env:GITHUB_SHA" --title "EPUB Maker 1.2.0" --notes "장면전환 개선 정식판. 빈 줄 장면전환 감지(선택 사항), *와 *** 독립 설정, 원문 점 기호 보존, 장면전환 스타일 및 EPUB GUI 설정 확장. 이전 버전의 콜론 챕터 제목 처리, 안내문 자동 삽입, 작품/권수 타이틀 디자인 포함. Windows 64비트용 ZIP 안의 EPUB Maker.exe를 실행하세요."
