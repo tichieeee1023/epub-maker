@@ -4,14 +4,13 @@
     <title>{{ book_title }} {{ volume_number }}권</title>
 </head>
 <body>
-    <section class="title-page">
+    <section class="title-page title-page--editorial">
+        <p class="title-eyebrow">{{ book_english_title }}</p>
+        <h1 class="work-title">{{ book_title }}</h1>
         <p class="original-title">{{ book_original_title }}</p>
         <p class="korean-title">{{ book_korean_title }}</p>
         <div class="title-rule"></div>
-
-        <h1 class="work-title">{{ book_title }}</h1>
-        <p class="english-title">{{ book_english_title }}</p>
-        <p class="volume-label">{{ volume_number }}권</p>
+        <p class="volume-wrapper"><span class="volume-label">{{ volume_number }}권</span></p>
         <p class="author">{{ author_korean }}</p>
     </section>
 </body>

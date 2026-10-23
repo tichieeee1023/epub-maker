@@ -123,6 +123,8 @@ def config_to_form_values(config):
         values[key] = next(
             label for label, value in options.items() if value == selected_value
         )
+    for key in ("include_translation_notice", "include_reader_notice"):
+        values[key] = bool(normalized[key])
     return values
 
 
@@ -131,6 +133,8 @@ def form_values_to_config(values, base_config):
     config.pop("identifier", None)
     config["input_file"] = values["input_file"].strip()
     config["cover_file"] = values["cover_file"].strip()
+    for key in ("include_translation_notice", "include_reader_notice"):
+        config[key] = bool(values[key])
 
     for path, _label in FIELD_SPECS:
         value = values[path].strip()
@@ -246,84 +250,66 @@ class ReaderPreview(ctk.CTkFrame):
         )
 
     def _draw_title_page(self, left, top, width, height):
+        # GUI Canvas 미리보기: XHTML/CSS의 editorial 레이아웃을 간략히 모사한다.
         values = self.preview_values
         center_x = left + width / 2
         scale = max(0.78, min(1.0, height / 460))
+        english_title = values["english_title"].strip()
+        work_title = values["title"].strip() or "작품명"
         original_title = values["original_title"].strip() or "원제"
         korean_title = values["korean_title"].strip()
-        work_title = values["title"].strip() or "작품명"
-        english_title = values["english_title"].strip()
         volume = values["volume.number"].strip() or "1"
         author = values["author_korean"].strip() or "작가명"
 
-        y = top + height * 0.19
+        y = top + 64 * scale
+        if english_title:
+            self.canvas.create_text(
+                center_x, y, text=english_title.upper(), width=width * 0.86,
+                fill="#888888", font=(FONT_FAMILY, round(10 * scale)),
+                justify="center",
+            )
+            y += 43 * scale
+
         self.canvas.create_text(
-            center_x,
-            y,
-            text=original_title,
-            width=width * 0.82,
-            fill="#4A4A4A",
-            font=(FONT_FAMILY, round(16 * scale)),
+            center_x, y, text=work_title, width=width * 0.86,
+            fill="#191919", font=(FONT_FAMILY, round(23 * scale), "bold"),
+            justify="center",
+        )
+        y += 44 * scale
+        self.canvas.create_text(
+            center_x, y, text=original_title, width=width * 0.85,
+            fill="#555555", font=(FONT_FAMILY, round(13 * scale)),
             justify="center",
         )
         if korean_title:
-            y += 29 * scale
+            y += 26 * scale
             self.canvas.create_text(
-                center_x,
-                y,
-                text=korean_title,
-                width=width * 0.82,
-                fill="#777777",
-                font=(FONT_FAMILY, round(12 * scale)),
+                center_x, y, text=korean_title, width=width * 0.82,
+                fill="#999999", font=(FONT_FAMILY, round(10 * scale)),
                 justify="center",
             )
 
-        y += 48 * scale
+        y += 46 * scale
         self.canvas.create_line(
-            center_x - 24 * scale,
-            y,
-            center_x + 24 * scale,
-            y,
-            fill="#AAAAAA",
+            center_x - 17 * scale, y, center_x + 17 * scale, y,
+            fill="#777777",
         )
-        y += 48 * scale
-        self.canvas.create_text(
-            center_x,
-            y,
-            text=work_title,
-            width=width * 0.84,
-            fill="#222222",
-            font=(FONT_FAMILY, round(23 * scale), "bold"),
-            justify="center",
+        y += 55 * scale
+        badge_width = 62 * scale
+        badge_height = 36 * scale
+        self.canvas.create_rectangle(
+            center_x - badge_width / 2, y - badge_height / 2,
+            center_x + badge_width / 2, y + badge_height / 2,
+            outline="#666666", width=1,
         )
-        if english_title:
-            y += 34 * scale
-            self.canvas.create_text(
-                center_x,
-                y,
-                text=english_title,
-                width=width * 0.82,
-                fill="#777777",
-                font=(FONT_FAMILY, round(10 * scale)),
-                justify="center",
-            )
-
-        y += 58 * scale
         self.canvas.create_text(
-            center_x,
-            y,
-            text=f"{volume}권",
-            fill="#222222",
-            font=(FONT_FAMILY, round(15 * scale), "bold"),
+            center_x, y, text=f"{volume}권",
+            fill="#222222", font=(FONT_FAMILY, round(14 * scale), "bold"),
         )
-        y += 52 * scale
+        y += 95 * scale
         self.canvas.create_text(
-            center_x,
-            y,
-            text=author,
-            width=width * 0.82,
-            fill="#555555",
-            font=(FONT_FAMILY, round(12 * scale)),
+            center_x, y, text=author, width=width * 0.82,
+            fill="#333333", font=(FONT_FAMILY, round(12 * scale)),
             justify="center",
         )
 
@@ -425,7 +411,9 @@ class EpubMakerGUI(ctk.CTk):
 
         initial_values = config_to_form_values(self.base_config)
         self.variables = {
-            key: tk.StringVar(master=self, value=value)
+            key: (tk.BooleanVar(master=self, value=value)
+                  if isinstance(value, bool)
+                  else tk.StringVar(master=self, value=value))
             for key, value in initial_values.items()
         }
         self.status_variable = tk.StringVar(master=self, value="최근 입력값을 불러왔습니다.")
@@ -481,6 +469,7 @@ class EpubMakerGUI(ctk.CTk):
         self._build_fields_card(scroll, 1, "권 정보", VOLUME_FIELDS)
         self._build_files_card(scroll, 2)
         self._build_styles_card(scroll, 3)
+        self._build_notice_card(scroll, 4)
 
         action = ctk.CTkFrame(panel, fg_color="transparent")
         action.grid(row=2, column=0, sticky="ew", padx=22, pady=(12, 20))
@@ -611,6 +600,20 @@ class EpubMakerGUI(ctk.CTk):
                 dropdown_font=ui_font(12),
             ).grid(row=style_row, column=1, sticky="ew", padx=(0, 16), pady=6)
         ctk.CTkLabel(card, text="").grid(row=len(STYLE_SPECS) + 1, column=0, pady=2)
+
+    def _build_notice_card(self, parent, row):
+        card = self._card(parent, row, "안내 페이지")
+        for index, (key, label) in enumerate((
+            ("include_translation_notice", "번역 안내 자동 삽입"),
+            ("include_reader_notice", "이용자 유의사항 자동 삽입"),
+        ), start=1):
+            ctk.CTkCheckBox(
+                card, text=label,
+                variable=self.variables[key],
+                font=ui_font(12),
+                text_color=COLORS["text"],
+            ).grid(row=index, column=0, columnspan=2,
+                   sticky="w", padx=16, pady=8)
 
     def _select_txt(self):
         selected = filedialog.askopenfilename(

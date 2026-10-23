@@ -65,6 +65,9 @@ class EpubMakerTests(unittest.TestCase):
                 "url": "https://example.com/obelisk",
             }
         )
+        # Legacy test expectations are intentionally without optional notice pages.
+        self.config["include_translation_notice"] = False
+        self.config["include_reader_notice"] = False
         self.config["chapter_header_style"] = "simple"
         self.config["scene_break_style"] = "dots"
         self.config["section_divider_style"] = "short-line"
