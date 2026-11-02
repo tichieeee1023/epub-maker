@@ -42,6 +42,7 @@ VOLUME_DECORATIONS = {
 DEFAULT_CONFIG = {
     "input_file": "",
     "cover_file": "",
+    "front_illustration_file": "",
     "include_translation_notice": True,
     "include_reader_notice": True,
     "chapter_header_style": DEFAULT_CHAPTER_HEADER_STYLE,
@@ -165,6 +166,8 @@ def validate_book_config(config):
         raise ValueError("TXT 파일을 선택해주세요.")
     if not isinstance(validated["cover_file"], str):
         raise ValueError("표지 이미지 경로를 확인해주세요.")
+    if not isinstance(validated["front_illustration_file"], str):
+        raise ValueError("삽화 이미지 경로를 확인해주세요.")
 
     return validated
 
