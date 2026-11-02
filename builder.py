@@ -23,6 +23,8 @@ OUTPUT_EPUB = OUTPUT_DIR / "output.epub"
 STYLE_FILE = RESOURCE_DIR / "styles" / "style.css"
 COVER_STYLE_FILE = RESOURCE_DIR / "styles" / "cover.css"
 COVER_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "cover.xhtml"
+ILLUSTRATION_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "illustration.xhtml"
+ILLUSTRATION_STYLE_FILE = RESOURCE_DIR / "styles" / "illustration.css"
 TITLE_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "title.xhtml"
 VOLUME_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "volume.xhtml"
 BOOKINFO_TEMPLATE_FILE = RESOURCE_DIR / "templates" / "bookinfo.xhtml"
@@ -276,22 +278,65 @@ def add_cover_stylesheet_link(document):
     )
 
 
-def validate_cover_file(cover_path):
-    if not cover_path.exists():
-        raise ValueError(f"표지 파일이 없습니다: {cover_path}")
+def validate_image_file(image_path, label, filename_stem):
+    """Validate an optional front image and return EPUB path, bytes and MIME type."""
+    if not image_path.is_file():
+        raise ValueError(f"{label} 파일이 없습니다: {image_path}")
 
-    suffix = cover_path.suffix.lower()
-    content = cover_path.read_bytes()
+    suffix = image_path.suffix.lower()
+    content = image_path.read_bytes()
     if suffix in {".jpg", ".jpeg"}:
-        if not content.startswith(b"\xff\xd8\xff"):
-            raise ValueError("표지 이미지 형식을 확인해주세요. 올바른 JPEG가 아닙니다.")
-        return "Images/cover.jpg", content
+        if not content.startswith(b"\\xff\\xd8\\xff"):
+            raise ValueError(f"{label} 이미지 형식을 확인해주세요. 올바른 JPEG가 아닙니다.")
+        return f"Images/{filename_stem}.jpg", content, "image/jpeg"
     if suffix == ".png":
-        if not content.startswith(b"\x89PNG\r\n\x1a\n"):
-            raise ValueError("표지 이미지 형식을 확인해주세요. 올바른 PNG가 아닙니다.")
-        return "Images/cover.png", content
+        if not content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+            raise ValueError(f"{label} 이미지 형식을 확인해주세요. 올바른 PNG가 아닙니다.")
+        return f"Images/{filename_stem}.png", content, "image/png"
+    raise ValueError(f"{label} 이미지 형식을 확인해주세요. JPG, JPEG, PNG만 지원합니다.")
 
-    raise ValueError("표지 이미지 형식을 확인해주세요. JPG, JPEG, PNG만 지원합니다.")
+
+def validate_cover_file(cover_path):
+    name, content, _mime_type = validate_image_file(cover_path, "표지", "cover")
+    return name, content
+
+
+def create_front_illustration_page(book, config, image_path):
+    image_name, image_content, media_type = validate_image_file(
+        image_path, "삽화", "front_illustration"
+    )
+    image_item = epub.EpubImage(
+        uid="front_illustration_image",
+        file_name=image_name,
+        media_type=media_type,
+        content=image_content,
+    )
+    book.add_item(image_item)
+    illustration_style = epub.EpubItem(
+        uid="style_front_illustration",
+        file_name="Styles/illustration.css",
+        media_type="text/css",
+        content=ILLUSTRATION_STYLE_FILE.read_text(encoding="utf-8"),
+    )
+    book.add_item(illustration_style)
+
+    template = ILLUSTRATION_TEMPLATE_FILE.read_text(encoding="utf-8")
+    template = template.replace("{{ illustration_image_href }}", f"../{image_name}")
+    template = template.replace("{{ book_title }}", escape(config["title"]))
+    page = epub.EpubHtml(
+        uid="front_illustration",
+        title="권두 삽화",
+        file_name="Text/illustration.xhtml",
+        lang="ko",
+    )
+    page.content = template
+    page.add_link(
+        href="../Styles/illustration.css",
+        rel="stylesheet",
+        type="text/css",
+    )
+    book.add_item(page)
+    return page
 
 
 def create_cover_page(book, config, cover_name, cover_content, cover_style):
@@ -351,6 +396,14 @@ def create_epub(chapters, config, output_epub=None):
             cover_name,
             cover_content,
             cover_style,
+        )
+
+    illustration_page = None
+    illustration_value = config.get("front_illustration_file", "").strip()
+    if illustration_value:
+        illustration_path = resolve_user_path(illustration_value)
+        illustration_page = create_front_illustration_page(
+            book, config, illustration_path
         )
 
     title_page = epub.EpubHtml(
@@ -437,6 +490,8 @@ def create_epub(chapters, config, output_epub=None):
     book.add_item(epub.EpubNav())
 
     front_matter = [title_page, volume_page]
+    if illustration_page is not None:
+        front_matter.insert(0, illustration_page)
     if cover_page is not None:
         front_matter.insert(0, cover_page)
     book.spine = front_matter + notice_pages + epub_chapters + [bookinfo_page]
