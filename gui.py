@@ -148,6 +148,7 @@ def config_to_form_values(config):
     values = {
         "input_file": normalized.get("input_file", ""),
         "cover_file": normalized.get("cover_file", ""),
+        "front_illustration_file": normalized.get("front_illustration_file", ""),
     }
     for path, _label in FIELD_SPECS:
         values[path] = str(get_nested_value(normalized, path))
@@ -166,6 +167,7 @@ def form_values_to_config(values, base_config):
     config.pop("identifier", None)
     config["input_file"] = values["input_file"].strip()
     config["cover_file"] = values["cover_file"].strip()
+    config["front_illustration_file"] = values["front_illustration_file"].strip()
     for key in ("include_translation_notice", "include_reader_notice"):
         config[key] = bool(values[key])
 
@@ -453,6 +455,7 @@ class EpubMakerGUI(ctk.CTk):
         self.file_display_variables = {
             "input_file": tk.StringVar(master=self),
             "cover_file": tk.StringVar(master=self),
+            "front_illustration_file": tk.StringVar(master=self),
         }
         self.autosave_job = None
         self.preview_source_path = None
@@ -584,6 +587,7 @@ class EpubMakerGUI(ctk.CTk):
         file_rows = (
             ("input_file", "TXT 파일 선택", self._select_txt),
             ("cover_file", "표지 이미지 선택", self._select_cover),
+            ("front_illustration_file", "권두 삽화 선택", self._select_front_illustration),
         )
         for file_row, (key, label, command) in enumerate(file_rows, start=1):
             ctk.CTkButton(
@@ -605,7 +609,25 @@ class EpubMakerGUI(ctk.CTk):
                 text_color=COLORS["muted"],
                 font=ui_font(11),
             ).grid(row=file_row, column=1, sticky="ew", padx=(0, 16), pady=6)
-        ctk.CTkLabel(card, text="").grid(row=3, column=0, pady=2)
+        ctk.CTkButton(
+            card,
+            text="삽화 선택 해제",
+            width=132,
+            height=30,
+            corner_radius=8,
+            fg_color="#F0F2F4",
+            hover_color="#E5E9EC",
+            text_color=COLORS["muted"],
+            font=ui_font(11),
+            command=lambda: self.variables["front_illustration_file"].set(""),
+        ).grid(row=4, column=0, padx=(16, 10), pady=(4, 10))
+        ctk.CTkLabel(
+            card,
+            text="선택 시 표지 바로 뒤에 한 장 삽입",
+            anchor="w",
+            text_color=COLORS["muted"],
+            font=ui_font(11),
+        ).grid(row=4, column=1, sticky="w", padx=(0, 16), pady=(4, 10))
 
     def _build_styles_card(self, parent, row):
         card = self._card(parent, row, "내지 스타일")
@@ -670,6 +692,19 @@ class EpubMakerGUI(ctk.CTk):
         if selected:
             self.variables["cover_file"].set(selected)
 
+    def _select_front_illustration(self):
+        selected = filedialog.askopenfilename(
+            parent=self,
+            title="표지 뒤에 넣을 삽화 한 장 선택",
+            filetypes=(
+                ("삽화 이미지", "*.jpg *.jpeg *.png"),
+                ("JPG", "*.jpg *.jpeg"),
+                ("PNG", "*.png"),
+            ),
+        )
+        if selected:
+            self.variables["front_illustration_file"].set(selected)
+
     def _form_values(self):
         return {key: variable.get() for key, variable in self.variables.items()}
 
@@ -694,6 +729,12 @@ class EpubMakerGUI(ctk.CTk):
             display_file_name(
                 self.variables["cover_file"].get(),
                 "표지 없이 생성",
+            )
+        )
+        self.file_display_variables["front_illustration_file"].set(
+            display_file_name(
+                self.variables["front_illustration_file"].get(),
+                "삽화 없이 생성",
             )
         )
 
