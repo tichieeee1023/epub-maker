@@ -286,11 +286,11 @@ def validate_image_file(image_path, label, filename_stem):
     suffix = image_path.suffix.lower()
     content = image_path.read_bytes()
     if suffix in {".jpg", ".jpeg"}:
-        if not content.startswith(b"\\xff\\xd8\\xff"):
+        if not content.startswith(b"\xff\xd8\xff"):
             raise ValueError(f"{label} 이미지 형식을 확인해주세요. 올바른 JPEG가 아닙니다.")
         return f"Images/{filename_stem}.jpg", content, "image/jpeg"
     if suffix == ".png":
-        if not content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        if not content.startswith(b"\x89PNG\r\n\x1a\n"):
             raise ValueError(f"{label} 이미지 형식을 확인해주세요. 올바른 PNG가 아닙니다.")
         return f"Images/{filename_stem}.png", content, "image/png"
     raise ValueError(f"{label} 이미지 형식을 확인해주세요. JPG, JPEG, PNG만 지원합니다.")
