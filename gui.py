@@ -807,12 +807,25 @@ class EpubMakerGUI(ctk.CTk):
             return
 
         output_path = Path(result["output_epub"])
+        titles = [chapter["title"] for chapter in result["chapters"]]
+        gaps = result.get("number_gaps", [])
+        gap_note = ""
+        if gaps:
+            examples = "\n".join(f"  • {gap}" for gap in gaps[:8])
+            gap_note = (
+                "\n\n⚠ 원고의 회차 번호가 건너뛴 구간이 있습니다.\n"
+                "(정상적으로 건너뛴 작품일 수도 있으니 원문과 비교해주세요.)\n"
+                f"{examples}"
+            )
         message = (
             "EPUB 생성 완료\n\n"
-            f"챕터 {len(result['chapters'])}개 · "
+            f"챕터 {len(titles)}개 · "
             f"장면 전환 {result['scene_breaks']}개 · "
             f"구분선 {result['section_dividers']}개 · "
             f"공백 전환 {result['blank_breaks']}개\n\n"
+            f"첫 챕터: {titles[0]}\n"
+            f"마지막 챕터: {titles[-1]}"
+            f"{gap_note}\n\n"
             f"{output_path}"
         )
         self.status_variable.set(f"완료: {output_path.name}")
