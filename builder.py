@@ -36,9 +36,64 @@ SCENE_BREAK_MARKERS = frozenset({"*", "***"})
 SECTION_DIVIDER_MARKER = "---"
 BLANK_SCENE_BREAK_MARKER = "__EPUB_MAKER_BLANK_SCENE_BREAK__"
 SOURCE_DOT_BREAK_RE = re.compile(r"[·•∙](?:[ \t]*[·•∙]){0,9}")
+# Use the *same* parser for chapter splitting and blank-break protection.
+# A line's leading BOM/zero-width characters and indentation should not
+# prevent a valid title from becoming a chapter.
 CHAPTER_HEADING_LINE = re.compile(
-    r"^#[ \t]*제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?[ \t]*$"
+    r"^[ \t\u3000\ufeff\u200b\u2060]*[#＃]{1,6}"
+    r"[ \t\u3000\ufeff\u200b\u2060]*"
+    r"(?P<number>(?:제[ \t\u3000]*\d+[ \t\u3000]*[장화회편절]"
+    r"|第[ \t\u3000]*\d+[ \t\u3000]*[章话話回节節]))"
+    r"(?P<suffix>[^\r\n]*)$"
 )
+SUSPICIOUS_CHAPTER_LINE = re.compile(
+    r"^[ \t\u3000\ufeff\u200b\u2060]*[#＃]{1,6}"
+    r"[ \t\u3000\ufeff\u200b\u2060]*(?:제|第)[ \t\u3000]*\d+"
+)
+
+
+def parse_chapter_heading(line):
+    """Return the full chapter title on a Markdown-like heading line."""
+    match = CHAPTER_HEADING_LINE.fullmatch(line.rstrip("\r\n"))
+    if not match:
+        return None
+    number = re.sub(r"[ \t\u3000]", "", match.group("number"))
+    return (number + match.group("suffix")).rstrip()
+
+
+def find_unrecognized_chapter_headings(text):
+    """Report suspicious lines instead of silently burying chapters in prose."""
+    return [
+        (line_number, line.strip())
+        for line_number, line in enumerate(text.splitlines(), start=1)
+        if SUSPICIOUS_CHAPTER_LINE.match(line)
+        and parse_chapter_heading(line) is None
+    ]
+
+
+def scan_chapter_headings(text):
+    return [
+        title
+        for line in text.splitlines()
+        if (title := parse_chapter_heading(line)) is not None
+    ]
+
+
+def find_number_gaps(chapters):
+    """Hints only: source material may intentionally skip chapter numbers."""
+    previous = None
+    gaps = []
+    for chapter in chapters:
+        number, _subtitle = split_chapter_display_title(chapter["title"])
+        match = re.fullmatch(r"(?:제|第)(\d+)([장화회편절章话話回节節])", number)
+        if not match:
+            previous = None
+            continue
+        current = (match.group(2), int(match.group(1)))
+        if previous and previous[0] == current[0] and current[1] > previous[1] + 1:
+            gaps.append(f"{previous[1]}{previous[0]} → {current[1]}{current[0]}")
+        previous = current
+    return gaps
 
 
 def mark_blank_scene_breaks(text, detection="off"):
@@ -98,36 +153,34 @@ def preprocess_text(text):
 
 
 def split_chapters(text):
-    """#제1장 또는 #제1장 소제목 형식만 실제 챕터로 인식한다."""
-    pattern = re.compile(
-        r"^#[ \t]*(제\d+(?:장|화)(?:[ \t]*[:：][ \t]*[^\r\n]+|[ \t]+[^\r\n]+)?)\s*$",
-        re.MULTILINE,
-    )
-    matches = list(pattern.finditer(text))
+    """Split at recognized headings without swallowing subsequent lines.
+
+    Parsing is line-based; the previous multiline regular expression could
+    be too strict about indentation and invisible characters. All source
+    text before the first recognized heading is retained in the first chapter.
+    """
+    matches = []
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        title = parse_chapter_heading(line)
+        if title is not None:
+            matches.append((title, offset, offset + len(line)))
+        offset += len(line)
+
+    if not matches:
+        return []
+
+    opening_text = text[:matches[0][1]].strip()
     chapters = []
-
-    # 첫 챕터 앞의 미인식 원고는 첫 챕터에 포함해 데이터 유실을 막는다.
-    opening_text = text[:matches[0].start()].strip() if matches else ""
-
-    for index, match in enumerate(matches):
-        content_start = match.end()
+    for index, (title, _start, content_start) in enumerate(matches):
         content_end = (
-            matches[index + 1].start()
-            if index + 1 < len(matches)
-            else len(text)
+            matches[index + 1][1] if index + 1 < len(matches) else len(text)
         )
-        chapters.append(
-            {
-                "title": match.group(1).strip(),
-                "content": (
-                    (opening_text + "\n\n" if index == 0 and opening_text else "")
-                    + text[content_start:content_end].strip()
-                ),
-            }
-        )
-
+        body = text[content_start:content_end].strip()
+        if index == 0 and opening_text:
+            body = opening_text + "\n\n" + body
+        chapters.append({"title": title, "content": body})
     return chapters
-
 
 def text_to_html(
     content,
@@ -185,10 +238,14 @@ def text_to_html(
 
 
 def split_chapter_display_title(title):
-    match = re.fullmatch(r"(제\d+(?:장|화))(?:[ \t]*[:：][ \t]*(.+)|[ \t]+(.+))?", title)
+    match = re.fullmatch(
+        r"((?:제|第)\d+[장화회편절章话話回节節])(.*)", title
+    )
     if not match:
         return title, ""
-    return match.group(1), (match.group(2) or match.group(3) or "").strip()
+    subtitle = match.group(2).strip()
+    subtitle = re.sub(r"^[:：·.．\-—–、,，/／]\s*", "", subtitle)
+    return match.group(1), subtitle
 
 
 def render_chapter_header(title, chapter_header_style):
@@ -509,12 +566,39 @@ def generate_from_config(config):
     if input_path.suffix.lower() != ".txt":
         raise ValueError("TXT 파일을 선택해주세요.")
 
-    text = input_path.read_text(encoding="utf-8")
-    text = mark_blank_scene_breaks(text, config["blank_break_detection"])
-    processed_text = preprocess_text(text)
+    original_text = input_path.read_text(encoding="utf-8")
+    unrecognized = find_unrecognized_chapter_headings(original_text)
+    if unrecognized:
+        samples = "\n".join(
+            f"{line_number}행: {heading[:90]}"
+            for line_number, heading in unrecognized[:12]
+        )
+        more = (
+            f"\n외 {len(unrecognized) - 12}개" if len(unrecognized) > 12 else ""
+        )
+        raise ValueError(
+            "챕터 제목으로 보이지만 인식하지 못한 행이 있습니다.\n"
+            "본문이 합쳐진 상태로 EPUB을 만들지 않도록 생성을 중단했습니다.\n\n"
+            f"{samples}{more}\n\n원본 TXT의 제목 표기를 확인해주세요."
+        )
+
+    marked_text = mark_blank_scene_breaks(
+        original_text, config["blank_break_detection"]
+    )
+    processed_text = preprocess_text(marked_text)
+    before_titles = scan_chapter_headings(original_text)
+    after_titles = scan_chapter_headings(processed_text)
+    if before_titles != after_titles:
+        raise ValueError(
+            "텍스트 전처리 중 챕터 제목 목록이 달라졌습니다. "
+            "원본 TXT를 보호하기 위해 EPUB 생성을 중단했습니다."
+        )
     chapters = split_chapters(processed_text)
     if not chapters:
-        raise ValueError("챕터를 찾지 못했습니다. #제1장 형식인지 확인해주세요.")
+        raise ValueError(
+            "챕터를 찾지 못했습니다. #제1장, # 제1화, ## 제2화 등 "
+            "제목 표기를 확인해주세요."
+        )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_TXT.write_text(processed_text.replace(BLANK_SCENE_BREAK_MARKER, "[공백 장면전환]"), encoding="utf-8")
@@ -524,6 +608,7 @@ def generate_from_config(config):
     scene_breaks, section_dividers = count_postprocess_targets(chapters)
     return {
         "chapters": chapters,
+        "number_gaps": find_number_gaps(chapters),
         "scene_breaks": scene_breaks,
         "section_dividers": section_dividers,
         "blank_breaks": sum(c["content"].splitlines().count(BLANK_SCENE_BREAK_MARKER) for c in chapters),
