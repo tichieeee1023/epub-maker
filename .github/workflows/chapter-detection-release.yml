@@ -1,0 +1,49 @@
+name: Validate and release chapter detection fix v1.3.1
+
+on:
+  push:
+    branches:
+      - fix/chapter-detection-v1.3.1
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+      - name: Install build dependencies
+        run: python -m pip install -r requirements-build.txt
+      - name: Syntax validation
+        run: python -m compileall -q builder.py config.py gui.py main.py tests
+      - name: Run complete unit and regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Build Windows executable
+        run: pyinstaller --noconfirm --clean epub_maker.spec
+      - name: Verify EXE and create distribution ZIP
+        shell: pwsh
+        run: |
+          $exe = "dist/EPUB Maker.exe"
+          if (-not (Test-Path $exe)) { throw "EXE not found" }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $exe))
+          if ($bytes.Length -lt 4000000) { throw "EXE too small" }
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "Invalid Windows PE format" }
+          Compress-Archive -Path $exe -DestinationPath "EPUB-Maker-1.3.1.zip" -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EPUB-Maker-v1.3.1-Windows
+          path: EPUB-Maker-1.3.1.zip
+          if-no-files-found: error
+      - name: Publish v1.3.1 official release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.3.1 "EPUB-Maker-1.3.1.zip" --target "$env:GITHUB_SHA" --title "EPUB Maker 1.3.1 - chapter detection fix" --notes "챕터 누락 방지 수정: # 제1장 / #제1화, 앞 공백·BOM·전각 샵·여러 개 샵·부제 포함 제목 인식. 의심스러운 미인식 제목은 원고 행 번호와 함께 오류를 표시하고 EPUB 덮어쓰기를 방지. 생성 결과에서 첫/마지막 챕터 및 번호 건너뛰기 구간 안내. v1.3.0의 표지 뒤 삽화 기능과 기타 기능 유지. Windows 64비트 ZIP 안의 EPUB Maker.exe 실행."
